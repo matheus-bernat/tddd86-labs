@@ -1,0 +1,127 @@
+// Labb2, Del A - Matheus Bernat (matvi959), Caspian Süsskind (cassu286)
+
+/*
+ * Program description:
+ *
+ * The program finds the shortest way from a word to another by replacing
+ * a single letter at a time.
+ * The program also outputs the shortest chain of words in the end.
+ *
+ */
+
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <queue>
+#include <stack>
+#include <tuple>
+#include <set>
+#include <chrono>
+
+using namespace std;
+
+const string ALPHABET  = "abcdefghijklmnopqrstuvwxyz";
+
+/*Declaration of functions: */
+void printWelcomeMessage();
+void outputStackElements(stack<string>& stack);
+void findWordChain(const string& w1, const string& w2, const set<string>& dictionary);
+bool isEnglishWord(const string& word, const set<string>& dictionary);
+void buildDictionary(const unsigned wishedWordSize, set<string>& dictionary);
+void getWords(string& startWord, string& finalWord);
+
+int main() {
+    printWelcomeMessage();
+    string startWord;
+    string finalWord;
+    getWords(startWord, finalWord);
+    set<string> dictionary;
+    buildDictionary(finalWord.size(), dictionary);
+    auto start_time = chrono::high_resolution_clock::now();
+    findWordChain(startWord, finalWord, dictionary);
+    auto end_time = chrono::high_resolution_clock::now();
+    cout << "\n\nProgram has been running for " << chrono::duration_cast<chrono::seconds>(end_time - start_time).count() << " s" << endl;
+    cout << "\nHave a nice day. ";
+    return 0;
+}
+
+/* Transforms word1 into word2 by changing one letter at a time
+ * and outputs the fastest way to get there. */
+void findWordChain(const string& startWord, const string& finalWord, const set<string>& dictionary) {
+    queue<stack<string>> queueOfChains;
+    stack<string> chain;
+    chain.push(startWord);
+    queueOfChains.push(chain);
+    set<string> setOfWordsUsed;
+
+    while (!queueOfChains.empty()) {
+        stack<string> topChain = queueOfChains.front();
+        queueOfChains.pop();
+
+        if (topChain.top() == finalWord) {
+            outputStackElements(topChain); //hooray!
+            break; //hoppar av loopen
+        }
+        else {
+            string wordAtTop = topChain.top();
+            for(size_t wordPosition = 0; wordPosition < wordAtTop.size(); wordPosition++) {
+                for(size_t alphabetPosition = 0; alphabetPosition < ALPHABET.size(); alphabetPosition++) {
+                    string testWord = wordAtTop;
+                    testWord[wordPosition] = ALPHABET[alphabetPosition];
+                    if (isEnglishWord(testWord, dictionary) & (setOfWordsUsed.count(testWord) == 0)) {
+                        setOfWordsUsed.insert(testWord);
+                        stack<string> topChainCopy{topChain}; // create a copy of the current chain of words (stack)
+                        topChainCopy.push(testWord);          // put the testWord at the top of the copy you've just created
+                        queueOfChains.push(topChainCopy);     // add the copy stack to the end of the queue
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* Prints welcome message. */
+void printWelcomeMessage() {
+    cout << "Welcome to TDDD86 Word Chain." << endl;
+    cout << "If you give me two English words, I will transform the" << endl;
+    cout << "first into the second by changing one letter at a time." << endl;
+    cout << endl;
+}
+
+/* Prints stack elements of the fastest way. */
+void outputStackElements(stack<string>& stack) {
+    while (!stack.empty()) {
+        cout << stack.top() << " ";
+        stack.pop();
+    }
+}
+
+/* Checks whether the given word is an actual English word. */
+bool isEnglishWord(const string& word, const set<string>& dictionary) {
+    return (dictionary.find(word) != dictionary.end());
+}
+
+/* Builds dictionary of words with wished size. */
+void buildDictionary(const unsigned wishedWordSize, set<string>& dictionary) {
+    ifstream input;
+    string word;
+    string fileName = "dictionary.txt";
+    input.open(fileName);
+    while(!input.fail()) {
+        getline(input, word);
+        if (word.size() == wishedWordSize)
+            dictionary.insert(word);
+    }
+    input.close();
+}
+
+/* Takes input words from user.*/
+void getWords(string& startWord, string& finalWord) {
+    cout << "Please type two words:" << endl;
+    cin >> startWord;
+    cin >> finalWord;
+}
+
+
+
+
